@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-
-from coilmq.protocol import STOMP10
-
 """
 Core STOMP server logic, abstracted from socket transport implementation.
 
@@ -21,6 +17,8 @@ Patrick Hurley and Lionel Bouton.  See http://stompserver.rubyforge.org/
 """
 import logging
 from collections import defaultdict
+
+from coilmq.asyncio.protocol import STOMP10
 
 __authors__ = ['"Hans Lellelid" <hans@xmpl.org>']
 __copyright__ = "Copyright 2009 Hans Lellelid"
@@ -81,15 +79,16 @@ class StompEngine(object):
 
         self.protocol = protocol(self)
 
-    def process_frame(self, frame):
-        self.protocol.process_frame(frame)
+    async def process_frame(self, frame):
+        await self.protocol.process_frame(frame)
 
-    def unbind(self):
+    async def unbind(self):
         """
         Unbinds this connection from queue and topic managers (freeing up resources)
         and resets state.
         """
         self.connected = False
-        self.queue_manager.disconnect(self.connection)
-        self.topic_manager.disconnect(self.connection)
-        self.protocol.disable_heartbeat()
+        if self.queue_manager:
+            self.queue_manager.disconnect(self.connection)
+        await self.topic_manager.disconnect(self.connection)
+        await self.protocol.disable_heartbeat()

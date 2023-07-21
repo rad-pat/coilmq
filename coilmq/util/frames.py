@@ -43,12 +43,16 @@ def parse_headers(buff):
     """
     Parses buffer and returns command and headers as strings
     """
+
     preamble_lines = list(map(
         lambda x: six.u(x).decode(),
         iter(lambda: buff.readline().strip(), b''))
     )
     if not preamble_lines:
         raise EmptyBuffer()
+    # if len(preamble_lines) == 1 and preamble_lines[0] == '\n':
+    #     return HEARTBEAT, None
+    # preamble_lines = [p.strip() for p in preamble_lines]
     return preamble_lines[0], OrderedDict([l.split(':') for l in preamble_lines[1:]])
 
 
@@ -235,7 +239,7 @@ class FrameBuffer(object):
     may provide multiple frames in one data buffer).
 
     @ivar _buffer: The internal byte buffer.
-    @type _buffer: C{str}
+    @type _buffer: C{io.BytesIO}
 
     @ivar debug: Log extra parsing debug (logs will be DEBUG level).
     @type debug: C{bool}
@@ -265,7 +269,7 @@ class FrameBuffer(object):
         """
         Clears (empties) the internal buffer.
         """
-        self._buffer = io
+        self._buffer = io.BytesIO()
 
     def buffer_len(self):
         """
@@ -286,7 +290,7 @@ class FrameBuffer(object):
         Appends bytes to the internal buffer (may or may not contain full stomp frames).
 
         @param data: The bytes to append.
-        @type data: C{str}
+        @type data: C{bytes}
         """
         self._buffer.write(data)
 

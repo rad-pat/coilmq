@@ -54,7 +54,7 @@ class StompRequestHandler(BaseRequestHandler, StompConnection):
     def setup(self):
         if self.server.timeout is not None:
             self.request.settimeout(self.server.timeout)
-        self.debug = False
+        self.debug = True
         self.log = logging.getLogger('%s.%s' % (self.__module__, self.__class__.__name__))
         self.buffer = FrameBuffer()
         self.engine = StompEngine(connection=self,
@@ -77,6 +77,9 @@ class StompRequestHandler(BaseRequestHandler, StompConnection):
                     if self.debug:
                         self.log.debug("RECV: %r" % data)
                     self.buffer.append(data)
+
+                    if not self.buffer.buffer_empty():
+                        self.engine.protocol.process_heartbeat()
 
                     for frame in self.buffer:
                         self.log.debug("Processing frame: %s" % frame)
@@ -111,6 +114,15 @@ class StompRequestHandler(BaseRequestHandler, StompConnection):
         if self.debug:  # pragma: no cover
             self.log.debug("SEND: %r" % packed)
         self.request.sendall(packed)
+
+    def send_heartbeat(self):
+        """ Sends an EOL to connected socket client.
+
+        """
+        heartbeat = b'\n'
+        if self.debug:  # pragma: no cover
+            self.log.debug("SEND: %r" % heartbeat)
+        self.request.sendall(heartbeat)
 
 
 class StompServer(TCPServer):
