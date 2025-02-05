@@ -128,8 +128,9 @@ class Frame(object):
         @return: The string (bytes) for this stomp frame.
         @rtype: C{str}
         """
+        body_bytes = self.body if isinstance(self.body, bytes) else self.body.encode()
 
-        self.headers.setdefault('content-length', len(self.body))
+        self.headers.setdefault('content-length', len(body_bytes))
 
         # Convert and append any existing headers to a string as the
         # protocol describes.
@@ -139,7 +140,7 @@ class Frame(object):
         # Frame is Command + Header + EOF marker.
         return (
             "{0}\n{1}\n".format(self.cmd, "".join(headerparts)).encode() +
-            (self.body if isinstance(self.body, bytes) else self.body.encode()) +
+            body_bytes +
             '\x00'.encode()
         )
 
